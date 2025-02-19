@@ -7,74 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_view/photo_view.dart';
 
-class FullImageScreen extends StatelessWidget {
-  final String imagePath;
-  final String extractedText;
-
-  const FullImageScreen({
-    super.key,
-    required this.imagePath,
-    required this.extractedText,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("View Image")),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 7, // Give 70% height to image
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: PhotoView(
-                imageProvider: FileImage(File(imagePath)),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 2,
-                backgroundDecoration: const BoxDecoration(color: Colors.white),
-              ),
-            ),
-          ),
-
-          // Extracted Text Below Image
-          Expanded(
-            flex: 3, // Give 30% height to text section
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black12, blurRadius: 4, spreadRadius: 2),
-                ],
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Extracted Text:",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      extractedText.isNotEmpty
-                          ? extractedText
-                          : "No text found.",
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class ImagePreviewScreen extends StatefulWidget {
   final File image;
 
@@ -92,10 +24,10 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
   void initState() {
     super.initState();
     _image = widget.image;
-    _detectText(); // ✅ Auto-detect text when preview loads
+    _detectText();
   }
 
-  /// **Crops the Captured Image**
+  /// **Crops the Image**
   Future<void> _cropImage() async {
     CroppedFile? croppedFile = await ImageCropper().cropImage(
       sourcePath: _image.path,
@@ -117,7 +49,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       setState(() {
         _image = File(croppedFile.path);
       });
-      _detectText(); // ✅ Detect text again after cropping
+      _detectText();
     }
   }
 
@@ -134,7 +66,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
         _extractedText = recognizedText.text;
       });
     } catch (e) {
-      debugPrint("Text Detection Error: $e");
+      debugPrint("❌ Text Detection Error: $e");
     }
   }
 
@@ -142,10 +74,11 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: _extractedText));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Copied to clipboard!")),
+      const SnackBar(content: Text("📋 Copied to clipboard!")),
     );
   }
 
+  /// **Saves Image & Extracted Text**
   Future<void> _saveFile() async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
@@ -166,7 +99,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       savedFiles.add({
         "imagePath": imagePath,
         "text": _extractedText,
-        "timestamp": DateTime.now().toIso8601String(), // ✅ Save time
+        "timestamp": DateTime.now().toIso8601String(),
       });
 
       await File(textPath).writeAsString(json.encode(savedFiles));
@@ -174,46 +107,67 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Saved Successfully!")),
+        const SnackBar(content: Text("✅ Saved Successfully!")),
       );
     } catch (e) {
-      debugPrint("Save Error: $e");
+      debugPrint("❌ Save Error: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Image Preview")),
+      appBar: AppBar(title: const Text("📷 Image Preview")),
       body: Column(
         children: [
-          Expanded(child: Image.file(_image, fit: BoxFit.contain)),
+          /// **📌 Image Display (Zoomable)**
+          Expanded(
+            flex: 6,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: PhotoView(
+                imageProvider: FileImage(_image),
+                minScale: PhotoViewComputedScale.contained,
+                maxScale: PhotoViewComputedScale.covered * 2,
+                backgroundDecoration: const BoxDecoration(color: Colors.white),
+              ),
+            ),
+          ),
 
+          /// **📌 Extracted Text (Scrollable)**
           if (_extractedText.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(_extractedText),
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: Text(
+                    _extractedText,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
             ),
 
-          /// **Raised Button Row (Moved 20px Up)**
+          /// **📌 Action Buttons**
           Padding(
-            padding: const EdgeInsets.only(bottom: 40, top: 10), // ✅ Moved Up
+            padding: const EdgeInsets.only(bottom: 60, top: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
                   icon: const Icon(Icons.crop),
-                  label: const Text("Crop"),
+                  label: const Text("✂ Crop"),
                   onPressed: _cropImage,
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.save),
-                  label: const Text("Save"),
+                  label: const Text("💾 Save"),
                   onPressed: _saveFile,
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.copy),
-                  label: const Text("Copy"),
+                  label: const Text("📋 Copy"),
                   onPressed: _copyToClipboard,
                 ),
               ],
