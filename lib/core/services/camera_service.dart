@@ -1,6 +1,5 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
 
 class CameraService {
   CameraController? _cameraController;
@@ -25,35 +24,31 @@ class CameraService {
     }
   }
 
-  /// Captures an image and returns the file
-  Future<File?> captureImage() async {
-    if (_isCameraInitialized && _cameraController != null) {
-      try {
-        final XFile imageFile = await _cameraController!.takePicture();
-        return File(imageFile.path);
-      } catch (e) {
-        debugPrint('Error capturing image: $e');
-      }
-    }
-    return null;
-  }
-
-  /// Disposes the camera controller
-  void disposeCamera() {
-    _cameraController?.dispose();
-    _isCameraInitialized = false;
-  }
-
   /// Returns the camera preview widget
   Widget getCameraPreview() {
     if (_isCameraInitialized && _cameraController != null) {
       return AspectRatio(
-        aspectRatio:
-            _cameraController!.value.aspectRatio, // Dynamic aspect ratio
+        aspectRatio: _cameraController!.value.aspectRatio,
         child: CameraPreview(_cameraController!),
       );
     } else {
       return const Center(child: CircularProgressIndicator());
     }
+  }
+
+  /// Disposes the camera
+  void disposeCamera() {
+    _cameraController?.dispose();
+    _isCameraInitialized = false;
+  }
+
+  /// Returns the CameraController instance
+  CameraController? getController() {
+    return _cameraController;
+  }
+
+  /// Returns the camera initialization state
+  bool isCameraReady() {
+    return _isCameraInitialized;
   }
 }

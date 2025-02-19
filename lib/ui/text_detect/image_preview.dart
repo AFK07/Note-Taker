@@ -5,6 +5,75 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:photo_view/photo_view.dart';
+
+class FullImageScreen extends StatelessWidget {
+  final String imagePath;
+  final String extractedText;
+
+  const FullImageScreen({
+    super.key,
+    required this.imagePath,
+    required this.extractedText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("View Image")),
+      body: Column(
+        children: [
+          Expanded(
+            flex: 7, // Give 70% height to image
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: PhotoView(
+                imageProvider: FileImage(File(imagePath)),
+                minScale: PhotoViewComputedScale.contained,
+                maxScale: PhotoViewComputedScale.covered * 2,
+                backgroundDecoration: const BoxDecoration(color: Colors.white),
+              ),
+            ),
+          ),
+
+          // Extracted Text Below Image
+          Expanded(
+            flex: 3, // Give 30% height to text section
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black12, blurRadius: 4, spreadRadius: 2),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Extracted Text:",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      extractedText.isNotEmpty
+                          ? extractedText
+                          : "No text found.",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class ImagePreviewScreen extends StatefulWidget {
   final File image;
@@ -94,7 +163,12 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
             .toList();
       }
 
-      savedFiles.add({"imagePath": imagePath, "text": _extractedText});
+      savedFiles.add({
+        "imagePath": imagePath,
+        "text": _extractedText,
+        "timestamp": DateTime.now().toIso8601String(), // ✅ Save time
+      });
+
       await File(textPath).writeAsString(json.encode(savedFiles));
 
       if (!mounted) return;

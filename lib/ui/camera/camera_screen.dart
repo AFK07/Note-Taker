@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:io';
-import 'package:dart_app/ui/text_detect/image_preview.dart';
-import 'package:dart_app/ui/text_detect/text_detect_screen.dart';
-import 'package:dart_app/ui/saved/saved_files_screen.dart'; // ✅ Import Saved Files Screen (Gallery)
+import 'package:dart_app/core/services/capture_service.dart';
+import 'package:dart_app/ui/saved/gallery_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -15,6 +13,8 @@ class CameraScreen extends StatefulWidget {
 class CameraScreenState extends State<CameraScreen> {
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
+  bool _isProcessing = false; // ✅ Prevent multiple captures
+  final CaptureService _captureService = CaptureService();
 
   @override
   void initState() {
@@ -22,12 +22,16 @@ class CameraScreenState extends State<CameraScreen> {
     _initializeCamera();
   }
 
-  /// Initializes the Camera
+  /// **Initializes the Camera**
   Future<void> _initializeCamera() async {
     try {
       final cameras = await availableCameras();
-      final camera = cameras.first;
+      if (cameras.isEmpty) {
+        debugPrint("❌ No cameras found!");
+        return;
+      }
 
+      final camera = cameras.first;
       _cameraController = CameraController(
         camera,
         ResolutionPreset.high,
@@ -41,41 +45,28 @@ class CameraScreenState extends State<CameraScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error initializing camera: $e');
+      debugPrint('❌ Error initializing camera: $e');
     }
   }
 
-  /// Captures an Image and Navigates to the Preview Screen
-  Future<void> _captureAndProcessImage() async {
-    if (_cameraController == null || !_isCameraInitialized) return;
-
-    try {
-      final XFile imageFile = await _cameraController!.takePicture();
-      final File file = File(imageFile.path);
-
-      if (!mounted) return;
-      final File? processedImage = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ImagePreviewScreen(image: file),
-        ),
-      );
-
-      if (!mounted) return;
-      if (processedImage != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TextDetectScreen(image: processedImage),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error capturing image: $e');
+  /// **Handles Image Capture & Processing**
+  Future<void> _captureAndProcess() async {
+    if (_cameraController == null || !_isCameraInitialized || _isProcessing) {
+      return;
     }
+
+    setState(() {
+      _isProcessing = true; // ✅ Prevents multiple captures
+    });
+
+    await _captureService.captureAndProcessImage(
+        context, _cameraController!, _isCameraInitialized);
+
+    setState(() {
+      _isProcessing = false;
+    });
   }
 
-  /// Disposes the Camera Controller
   @override
   void dispose() {
     _cameraController?.dispose();
@@ -85,46 +76,61 @@ class CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: _isCameraInitialized
-                ? CameraPreview(_cameraController!)
-                : const Center(child: CircularProgressIndicator()),
-          ),
-
-          /// ✅ Capture & Gallery Buttons
-          Positioned(
-            bottom: 30,
-            left: 20,
-            right: 20,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                /// ✅ Gallery Button (Opens Saved Files)
-                FloatingActionButton(
-                  heroTag: "gallery",
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SavedFilesScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.photo_library, size: 28),
-                ),
-
-                /// ✅ Capture Button (Takes Picture)
-                FloatingActionButton(
-                  heroTag: "capture",
-                  onPressed: _captureAndProcessImage,
-                  child: const Icon(Icons.camera_alt, size: 28),
-                ),
-              ],
+      body: SafeArea(
+        // ✅ Prevents elements from overlapping status bar
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _isCameraInitialized
+                  ? CameraPreview(_cameraController!)
+                  : const Center(child: CircularProgressIndicator()),
             ),
-          ),
-        ],
+
+            /// **📌 Gallery Button**
+            Positioned(
+              bottom: 50,
+              left: MediaQuery.of(context).size.width * 0.2,
+              child: FloatingActionButton(
+                heroTag: "gallery", // ✅ Prevent Hero Tag Conflicts
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GalleryScreen(),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.photo_library, size: 28),
+              ),
+            ),
+
+            /// **📌 Camera Capture Button (Centered)**
+            Positioned(
+              bottom: 50,
+              left: MediaQuery.of(context).size.width * 0.5 - 28,
+              child: FloatingActionButton(
+                heroTag: "capture",
+                onPressed: _isProcessing
+                    ? null
+                    : _captureAndProcess, // ✅ Prevent multiple taps
+                child: const Icon(Icons.camera_alt, size: 28),
+              ),
+            ),
+
+            /// **📌 Voice Recording Button**
+            Positioned(
+              bottom: 50,
+              right: MediaQuery.of(context).size.width * 0.2,
+              child: FloatingActionButton(
+                heroTag: "voice_record",
+                onPressed: () {
+                  // TODO: Implement voice recording functionality
+                },
+                child: const Icon(Icons.mic, size: 28),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
