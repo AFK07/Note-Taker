@@ -27,10 +27,22 @@ class _SavedFilesScreenState extends State<SavedFilesScreen> {
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String textPath = '${appDir.path}/saved_texts.json';
 
-      if (File(textPath).existsSync()) {
-        String content = await File(textPath).readAsString();
+      debugPrint("📂 Checking if file exists: $textPath");
 
-        /// ✅ Fix JSON parsing
+      if (!File(textPath).existsSync()) {
+        debugPrint("⚠ No saved files found. File does not exist.");
+        return;
+      }
+
+      String content = await File(textPath).readAsString();
+      debugPrint("📖 Read JSON content: $content");
+
+      if (content.trim().isEmpty) {
+        debugPrint("⚠ JSON file is empty.");
+        return;
+      }
+
+      try {
         List<Map<String, dynamic>> rawData =
             List<Map<String, dynamic>>.from(json.decode(content));
 
@@ -38,9 +50,9 @@ class _SavedFilesScreenState extends State<SavedFilesScreen> {
           savedFiles = rawData.map((e) => e.cast<String, String>()).toList();
         });
 
-        debugPrint("✅ Loaded ${savedFiles.length} saved files.");
-      } else {
-        debugPrint("⚠ No saved files found.");
+        debugPrint("✅ Successfully loaded ${savedFiles.length} saved files.");
+      } catch (e) {
+        debugPrint("❌ JSON Parsing Error: $e");
       }
     } catch (e) {
       debugPrint("❌ Load Error: $e");
@@ -62,33 +74,57 @@ class _SavedFilesScreenState extends State<SavedFilesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Saved Files")),
       body: savedFiles.isEmpty
-          ? const Center(child: Text("No saved files found."))
+          ? const Center(
+              child: Text(
+                "No saved files found.",
+                style: TextStyle(fontSize: 16),
+              ),
+            )
           : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 10),
               itemCount: savedFiles.length,
               itemBuilder: (context, index) {
+                String? imagePath = savedFiles[index]["imagePath"];
+                String? extractedText = savedFiles[index]["text"];
+                String timestamp = savedFiles[index]["timestamp"] ?? '';
+
                 return Card(
-                  margin: const EdgeInsets.all(10),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: ListTile(
-                    leading: Image.file(File(savedFiles[index]["imagePath"]!)),
+                    leading: imagePath != null && File(imagePath).existsSync()
+                        ? Image.file(File(imagePath),
+                            width: 60, height: 60, fit: BoxFit.cover)
+                        : const Icon(Icons.image_not_supported,
+                            size: 50, color: Colors.grey),
                     title: Text(
-                      savedFiles[index]["text"] ?? "No text found",
+                      extractedText ?? "No text found",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      "Captured on: ${_formatTimestamp(savedFiles[index]["timestamp"] ?? '')}",
+                      "Captured on: ${_formatTimestamp(timestamp)}",
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FullImageScreen(
-                            imagePath: savedFiles[index]["imagePath"]!,
-                            extractedText: savedFiles[index]["text"]!,
-                            timestamp: savedFiles[index]["timestamp"] ?? '',
+                      if (imagePath != null && File(imagePath).existsSync()) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FullImageScreen(
+                              imagePath: imagePath,
+                              extractedText: extractedText ?? '',
+                              timestamp: timestamp,
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Image file not found!")),
+                        );
+                      }
                     },
                   ),
                 );

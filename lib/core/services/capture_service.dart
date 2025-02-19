@@ -2,10 +2,7 @@ import 'dart:io';
 import 'dart:convert'; // ✅ Fix: Import JSON handling
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/services.dart';
 import 'package:dart_app/ui/text_detect/image_preview.dart';
 import 'package:dart_app/ui/text_detect/text_detect_screen.dart';
 
@@ -13,7 +10,10 @@ class CaptureService {
   /// **Handles Capturing & Processing Image**
   Future<void> captureAndProcessImage(BuildContext context,
       CameraController? cameraController, bool isCameraInitialized) async {
-    if (cameraController == null || !isCameraInitialized) return;
+    if (cameraController == null || !isCameraInitialized) {
+      debugPrint("❌ Camera not initialized.");
+      return;
+    }
 
     try {
       final XFile imageFile = await cameraController.takePicture();
@@ -50,16 +50,17 @@ class CaptureService {
       await image.copy(imagePath);
 
       final String textPath = '${appDir.path}/saved_texts.json';
-      List<Map<String, String>> savedFiles = [];
+      List<Map<String, dynamic>> savedFiles = [];
 
       if (File(textPath).existsSync()) {
         String content = await File(textPath).readAsString();
 
-        // ✅ Fix: Ensure JSON structure is properly converted
-        List<Map<String, dynamic>> rawData =
-            List<Map<String, dynamic>>.from(json.decode(content));
-
-        savedFiles = rawData.map((e) => e.cast<String, String>()).toList();
+        try {
+          savedFiles = List<Map<String, dynamic>>.from(json.decode(content));
+        } catch (e) {
+          debugPrint("❌ JSON Parsing Error: $e");
+          savedFiles = []; // Reset in case of corruption
+        }
       }
 
       // ✅ Add new entry with timestamp
@@ -74,6 +75,29 @@ class CaptureService {
       debugPrint("✅ Image & text saved successfully!");
     } catch (e) {
       debugPrint("❌ Save Error: $e");
+    }
+  }
+
+  /// **Loads Saved Files**
+  Future<List<Map<String, dynamic>>> loadSavedFiles() async {
+    try {
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String textPath = '${appDir.path}/saved_texts.json';
+
+      if (File(textPath).existsSync()) {
+        String content = await File(textPath).readAsString();
+
+        try {
+          return List<Map<String, dynamic>>.from(json.decode(content));
+        } catch (e) {
+          debugPrint("❌ JSON Parsing Error: $e");
+          return [];
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint("❌ Error loading saved files: $e");
+      return [];
     }
   }
 }
