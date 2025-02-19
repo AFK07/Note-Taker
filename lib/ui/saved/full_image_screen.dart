@@ -32,7 +32,7 @@ class FullImageScreen extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            flex: 7, // ✅ 70% of the screen for the image
+            flex: 2, // ✅ 70% of the screen for the image
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: PhotoView(
