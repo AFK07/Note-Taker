@@ -1,44 +1,43 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id "dev.flutter.flutter-gradle-plugin"
+
+
+    id "dev.flutter.flutter-gradle-plugin" // Flutter Gradle Plugin should be last
 }
 
 android {
-    namespace = "com.example.dart_app"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    namespace "com.example.dart_app"
+    compileSdk 34  // ✅ Explicitly set to latest stable SDK version
+    ndkVersion "25.1.8937393"  // ✅ Explicitly define the NDK version
+
+    defaultConfig {
+        applicationId "com.example.dart_app" // ✅ Unique Application ID
+        minSdkVersion 24  // ✅ Required for some dependencies like `flutter_sound`
+        targetSdkVersion 34  // ✅ Ensure latest compatibility
+        versionCode 1
+        versionName "1.0"
+    }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
-
-    defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.dart_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        jvmTarget = "1.8"
+        freeCompilerArgs = ["-Xlint:unchecked"]  // ✅ Ensure initialization before using
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.debug // ✅ Change to release signing if needed
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
 
 flutter {
-    source = "../.."
+    source "../.."
 }

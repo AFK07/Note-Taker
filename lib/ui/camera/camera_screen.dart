@@ -13,7 +13,8 @@ class CameraScreen extends StatefulWidget {
 class CameraScreenState extends State<CameraScreen> {
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
-  bool _isProcessing = false; // ✅ Prevent multiple captures
+  bool _isProcessing = false;
+  bool _isCaptureCentered = true; // ✅ Tracks which button is in center
   final CaptureService _captureService = CaptureService();
 
   @override
@@ -22,7 +23,6 @@ class CameraScreenState extends State<CameraScreen> {
     _initializeCamera();
   }
 
-  /// **Initializes the Camera**
   Future<void> _initializeCamera() async {
     try {
       final cameras = await availableCameras();
@@ -49,14 +49,21 @@ class CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  /// **Handles Image Capture & Processing**
   Future<void> _captureAndProcess() async {
     if (_cameraController == null || !_isCameraInitialized || _isProcessing) {
       return;
     }
 
+    if (!_isCaptureCentered) {
+      // If capture button is on the right, bring it back to the center
+      setState(() {
+        _isCaptureCentered = true;
+      });
+      return;
+    }
+
     setState(() {
-      _isProcessing = true; // ✅ Prevents multiple captures
+      _isProcessing = true;
     });
 
     await _captureService.captureAndProcessImage(
@@ -64,6 +71,12 @@ class CameraScreenState extends State<CameraScreen> {
 
     setState(() {
       _isProcessing = false;
+    });
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _isCaptureCentered = !_isCaptureCentered;
     });
   }
 
@@ -77,7 +90,6 @@ class CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        // ✅ Prevents elements from overlapping status bar
         child: Stack(
           children: [
             Positioned.fill(
@@ -91,7 +103,7 @@ class CameraScreenState extends State<CameraScreen> {
               bottom: 50,
               left: MediaQuery.of(context).size.width * 0.2,
               child: FloatingActionButton(
-                heroTag: "gallery", // ✅ Prevent Hero Tag Conflicts
+                heroTag: "gallery",
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -104,28 +116,28 @@ class CameraScreenState extends State<CameraScreen> {
               ),
             ),
 
-            /// **📌 Camera Capture Button (Centered)**
+            /// **📌 Capture Button (Swaps with Audio Button)**
             Positioned(
               bottom: 50,
-              left: MediaQuery.of(context).size.width * 0.5 - 28,
+              left: _isCaptureCentered
+                  ? MediaQuery.of(context).size.width * 0.5 - 28
+                  : MediaQuery.of(context).size.width * 0.8,
               child: FloatingActionButton(
                 heroTag: "capture",
-                onPressed: _isProcessing
-                    ? null
-                    : _captureAndProcess, // ✅ Prevent multiple taps
-                child: const Icon(Icons.camera_alt, size: 28),
+                onPressed: _captureAndProcess,
+                child: const Icon(Icons.camera_alt_outlined, size: 28),
               ),
             ),
 
-            /// **📌 Voice Recording Button**
+            /// **📌 Voice Recording Button (Swaps with Capture Button)**
             Positioned(
               bottom: 50,
-              right: MediaQuery.of(context).size.width * 0.2,
+              left: _isCaptureCentered
+                  ? MediaQuery.of(context).size.width * 0.8
+                  : MediaQuery.of(context).size.width * 0.5 - 28,
               child: FloatingActionButton(
                 heroTag: "voice_record",
-                onPressed: () {
-                  // TODO: Implement voice recording functionality
-                },
+                onPressed: _toggleMode,
                 child: const Icon(Icons.mic, size: 28),
               ),
             ),
