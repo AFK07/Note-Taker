@@ -28,7 +28,7 @@ dependencies:
   async: ^2.12.0
   material_color_utilities: ^0.11.1  # ✅ Match Flutter Test's requirement
   font_awesome_flutter: ^10.6.0  # ✅ Added for extra icons
-
+  flutter_sound: ^9.2.13
 dev_dependencies:
   flutter_test:
     sdk: flutter

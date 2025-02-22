@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:dart_app/core/services/capture_service.dart';
 import 'package:dart_app/ui/saved/gallery_screen.dart';
+import 'package:dart_app/ui/audio/audio_visualizer.dart'; // Import visualizer screen
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -13,8 +14,8 @@ class CameraScreen extends StatefulWidget {
 class CameraScreenState extends State<CameraScreen> {
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
-  bool _isProcessing = false;
   bool _isCaptureCentered = true; // ✅ Tracks which button is in center
+  bool _isAudioMode = false; // ✅ Tracks if in audio mode
   final CaptureService _captureService = CaptureService();
 
   @override
@@ -49,35 +50,27 @@ class CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> _captureAndProcess() async {
-    if (_cameraController == null || !_isCameraInitialized || _isProcessing) {
-      return;
-    }
-
-    if (!_isCaptureCentered) {
-      // If capture button is on the right, bring it back to the center
-      setState(() {
-        _isCaptureCentered = true;
-      });
-      return;
-    }
-
-    setState(() {
-      _isProcessing = true;
-    });
-
-    await _captureService.captureAndProcessImage(
-        context, _cameraController!, _isCameraInitialized);
-
-    setState(() {
-      _isProcessing = false;
-    });
-  }
-
   void _toggleMode() {
     setState(() {
       _isCaptureCentered = !_isCaptureCentered;
+      _isAudioMode = !_isAudioMode;
     });
+  }
+
+  Future<void> _captureAndProcess() async {
+    if (_cameraController == null || !_isCameraInitialized) {
+      return;
+    }
+    // Placeholder action for capture function
+    debugPrint("📸 Image captured!");
+  }
+
+  Widget _getActiveScreen() {
+    return _isCaptureCentered
+        ? (_isCameraInitialized
+            ? CameraPreview(_cameraController!)
+            : const Center(child: CircularProgressIndicator()))
+        : const AudioVisualizerScreen();
   }
 
   @override
@@ -89,60 +82,56 @@ class CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: _isCameraInitialized
-                  ? CameraPreview(_cameraController!)
-                  : const Center(child: CircularProgressIndicator()),
-            ),
+      body: Stack(
+        children: [
+          Positioned.fill(child: _getActiveScreen()),
 
-            /// **📌 Gallery Button**
-            Positioned(
-              bottom: 50,
-              left: MediaQuery.of(context).size.width * 0.2,
-              child: FloatingActionButton(
-                heroTag: "gallery",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const GalleryScreen(),
-                    ),
-                  );
-                },
-                child: const Icon(Icons.photo_library, size: 28),
-              ),
+          /// **📌 Gallery Button (Shifted to the Left for Balance)**
+          Positioned(
+            bottom: 30,
+            left: MediaQuery.of(context).size.width * 0.2 - 40,
+            child: FloatingActionButton(
+              heroTag: "gallery",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GalleryScreen(),
+                  ),
+                );
+              },
+              child: const Icon(Icons.photo_library, size: 28),
             ),
+          ),
 
-            /// **📌 Capture Button (Swaps with Audio Button)**
-            Positioned(
-              bottom: 50,
-              left: _isCaptureCentered
-                  ? MediaQuery.of(context).size.width * 0.5 - 28
-                  : MediaQuery.of(context).size.width * 0.8,
-              child: FloatingActionButton(
-                heroTag: "capture",
-                onPressed: _captureAndProcess,
-                child: const Icon(Icons.camera_alt_outlined, size: 28),
-              ),
+          /// **📌 Capture Button (Switches Back to Center When Clicked)**
+          Positioned(
+            bottom: 30,
+            left: _isCaptureCentered
+                ? MediaQuery.of(context).size.width * 0.5 - 28
+                : MediaQuery.of(context).size.width * 0.8,
+            child: FloatingActionButton(
+              heroTag: "capture",
+              onPressed: _isCaptureCentered ? _captureAndProcess : _toggleMode,
+              child: const Icon(Icons.camera_alt_outlined, size: 28),
             ),
+          ),
 
-            /// **📌 Voice Recording Button (Swaps with Capture Button)**
-            Positioned(
-              bottom: 50,
-              left: _isCaptureCentered
-                  ? MediaQuery.of(context).size.width * 0.8
-                  : MediaQuery.of(context).size.width * 0.5 - 28,
-              child: FloatingActionButton(
-                heroTag: "voice_record",
-                onPressed: _toggleMode,
-                child: const Icon(Icons.mic, size: 28),
-              ),
+          /// **📌 Voice Recording Button (Switches Back to Center When Clicked)**
+          Positioned(
+            bottom: 30,
+            left: _isCaptureCentered
+                ? MediaQuery.of(context).size.width * 0.8
+                : MediaQuery.of(context).size.width * 0.5 - 28,
+            child: FloatingActionButton(
+              heroTag: "voice_record",
+              onPressed: _isCaptureCentered
+                  ? _toggleMode
+                  : () => setState(() => _isCaptureCentered = true),
+              child: const Icon(Icons.mic, size: 28),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
