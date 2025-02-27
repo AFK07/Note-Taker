@@ -31,7 +31,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+build/
+pubspec.lock
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +44,30 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter/Dart related
+*.dart_tool/
+*.packages
+*.flutter-plugins
+*.flutter-plugins-dependencies
+build/
+pubspec.lock
+
+# IDE Specific
+.idea/
+.vscode/
+*.iml
+
+# ✅ Firebase Keys (VERY IMPORTANT ⚠️) - Prevent uploading sensitive Firebase config files
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/google-services.json
+firebase.json
+
+# ✅ CMake / Native Build Cache (Prevent unnecessary binary files)
+android/app/.cxx/
+android/app/build/
+android/.gradle/
+
+# ✅ Flutter Web / Auto-generated files (Prevent unnecessary web build files)
+web/firebase-config.js

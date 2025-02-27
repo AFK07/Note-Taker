@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:dart_app/core/services/capture_service.dart';
 import 'package:dart_app/ui/saved/gallery_screen.dart';
-import 'package:dart_app/ui/audio/audio_visualizer.dart'; // Import visualizer screen
+import 'package:dart_app/ui/audio/audio_screen.dart'; // ✅ Uses AudioScreen for recording
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -70,7 +70,7 @@ class CameraScreenState extends State<CameraScreen> {
         ? (_isCameraInitialized
             ? CameraPreview(_cameraController!)
             : const Center(child: CircularProgressIndicator()))
-        : const AudioVisualizerScreen();
+        : const AudioScreen(); // ✅ Uses AudioScreen for audio mode
   }
 
   @override

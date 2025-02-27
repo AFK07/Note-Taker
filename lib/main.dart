@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:dart_app/ui/camera/camera_screen.dart'; // Make sure this file exists
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart'; // For kIsWeb check
+import 'firebase_options.dart'; // Import the generated Firebase options
+import 'package:dart_app/ui/camera/camera_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding
+      .ensureInitialized(); // Ensure Flutter bindings are initialized
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    print("✅ Firebase initialized successfully.");
+  } catch (e) {
+    print("❌ Firebase initialization failed: $e");
+  }
+
   runApp(const MyApp());
 }
 
@@ -16,7 +32,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const CameraScreen(), // ✅ Opens the camera first
+      home: const CameraScreen(), // Opens the camera first
     );
   }
 }

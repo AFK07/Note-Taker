@@ -1,3 +1,4 @@
+// Project-Level build.gradle.kts
 allprojects {
     repositories {
         google()
@@ -18,15 +19,15 @@ tasks.register("clean", Delete) {
 }
 
 buildscript {
-    ext.kotlin_version = "1.8.20"
+    ext.kotlin_version = "2.1.10" // ✅ Update to the latest stable Kotlin version
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal()  // Ensure Kotlin plugin can be fetched
+        gradlePluginPortal() // ✅ Ensure Kotlin plugin can be fetched
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:8.2.1"
+        classpath "com.android.tools.build:gradle:8.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.google.gms:google-services:4.4.2" // ✅ Updated Google Services
     }
 }
-

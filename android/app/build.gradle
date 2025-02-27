@@ -1,43 +1,56 @@
 plugins {
-    id "com.android.application"
-    id "kotlin-android"
-
-
-    id "dev.flutter.flutter-gradle-plugin" // Flutter Gradle Plugin should be last
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin") // Flutter plugin
+    id("com.google.gms.google-services") // Firebase plugin
 }
 
 android {
-    namespace "com.example.dart_app"
-    compileSdk 34  // ✅ Explicitly set to latest stable SDK version
-    ndkVersion "25.1.8937393"  // ✅ Explicitly define the NDK version
+    namespace = "com.example.dart_app"
+    compileSdk = 34 // Updated to latest SDK version
+    ndkVersion = "25.1.8937393" // Ensure this matches your NDK version
 
     defaultConfig {
-        applicationId "com.example.dart_app" // ✅ Unique Application ID
-        minSdkVersion 24  // ✅ Required for some dependencies like `flutter_sound`
-        targetSdkVersion 34  // ✅ Ensure latest compatibility
-        versionCode 1
-        versionName "1.0"
+        applicationId = "com.example.dart_app"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17 // Updated to Java 17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
-        freeCompilerArgs = ["-Xlint:unchecked"]  // ✅ Ensure initialization before using
+        jvmTarget = "17" // Updated to match Java 17
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug // ✅ Change to release signing if needed
-            minifyEnabled false
-            shrinkResources false
+            signingConfig = signingConfigs.debug
+            minifyEnabled = false
+            shrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
 
 flutter {
-    source "../.."
+    source = "../.."
+}
+
+dependencies {
+    // Firebase BoM (Bill of Materials) for version management
+    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
+
+    // Firebase dependencies
+    implementation("com.google.firebase:firebase-analytics-ktx") // Firebase Analytics with Kotlin extensions
+    implementation("com.google.firebase:firebase-auth-ktx") // Firebase Authentication with Kotlin extensions
+    implementation("com.google.firebase:firebase-firestore-ktx") // Firestore with Kotlin extensions
+    implementation("com.google.firebase:firebase-storage-ktx") // Firebase Storage with Kotlin extensions
+
+    // Flutter dependencies (if needed)
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.10"
 }

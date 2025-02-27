@@ -5,6 +5,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone to visualize sound.</string>
 
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

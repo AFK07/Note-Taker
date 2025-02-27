@@ -1,40 +1,49 @@
 name: dart_app
-
 description: "A new Flutter project."
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.6.1
+  sdk: ">=3.6.1 <4.0.0"
+  flutter: ">=3.19.0"  # Adjusted for compatibility
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
   camera: ^0.11.1
-  path_provider: ^2.0.14
-  image_picker: ^1.0.7
+  path_provider: ^2.1.3
+  image_picker: ^1.0.8
   image_cropper: ^9.0.0
+  google_mlkit_digital_ink_recognition: ^0.13.0
   google_mlkit_text_recognition: ^0.14.0
-  permission_handler: ^11.0.1
+  permission_handler: ^11.1.0
   speech_to_text: ^7.0.0
-  image: ^4.1.3
+  image: ^4.2.0
   google_ml_kit: ^0.19.0
   intl: ^0.20.2
   photo_view: ^0.15.0
-  vm_service: 14.3.1  # ✅ Match Flutter Test's requirement
-  camera_android_camerax: ^0.6.13
-  async: ^2.12.0
-  material_color_utilities: ^0.11.1  # ✅ Match Flutter Test's requirement
-  font_awesome_flutter: ^10.6.0  # ✅ Added for extra icons
+  vm_service: 14.3.1  # ✅ Matches Flutter SDK constraint
+  async: 2.12.0  # ✅ Matches Flutter SDK constraint
+  material_color_utilities: 0.11.1  # ✅ Matches Flutter SDK constraint
+  font_awesome_flutter: ^10.7.0
   flutter_sound: ^9.2.13
+  just_audio: ^0.9.37
+  record: ^5.2.1
+  firebase_core: ^3.12.0  # Updated for compatibility
+  firebase_auth: ^5.5.0
+  firebase_analytics: ^11.4.3
+  cloud_firestore: ^5.6.4
+  firebase_storage: ^12.4.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  fake_async: ^1.3.2  # ✅ Downgraded to match `flutter_test`
-  leak_tracker: ^10.0.8  # ✅ Already fixed previously
+  fake_async: 1.3.2  # ✅ Matches Flutter SDK constraint
+  leak_tracker: 10.0.8  # ✅ Matches Flutter SDK constraint
+
 
 flutter:
   uses-material-design: true
