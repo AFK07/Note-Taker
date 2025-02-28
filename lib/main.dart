@@ -1,38 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart'; // For kIsWeb check
-import 'firebase_options.dart'; // Import the generated Firebase options
+import 'package:dart_app/widgets/main_layout.dart';
 import 'package:dart_app/ui/camera/camera_screen.dart';
+import 'firebase_options.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Ensure Flutter bindings are initialized
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    print("✅ Firebase initialized successfully.");
-  } catch (e) {
-    print("❌ Firebase initialization failed: $e");
-  }
-
-  runApp(const MyApp());
+  runApp(const MyApp()); // ✅ MyApp can be const
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key}); // ✅ Ensure MyApp has a const constructor
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Smart Note Taker',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const CameraScreen(), // Opens the camera first
+      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      home: MainLayout(child: const CameraScreen()), // ✅ Only child is const
     );
   }
 }
