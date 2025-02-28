@@ -2,15 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'package:dart_app/core/utils/text_extraction_util.dart';
 
 class CapturePreviewScreen extends StatefulWidget {
   final XFile imageFile;
-
   const CapturePreviewScreen({super.key, required this.imageFile});
-
   @override
   CapturePreviewScreenState createState() => CapturePreviewScreenState();
 }
@@ -27,15 +26,11 @@ class CapturePreviewScreenState extends State<CapturePreviewScreen> {
   }
 
   Future<void> _processImage(File imageFile) async {
-    final textRecognizer = TextRecognizer();
-    final inputImage = InputImage.fromFile(imageFile);
-    final RecognizedText recognizedText =
-        await textRecognizer.processImage(inputImage);
-    await textRecognizer.close();
-
+    setState(() => isProcessing = true);
+    String text = await TextExtractionUtil.extractText(imageFile);
     if (!mounted) return;
     setState(() {
-      extractedText = recognizedText.text;
+      extractedText = text;
       isProcessing = false;
     });
   }
@@ -43,23 +38,24 @@ class CapturePreviewScreenState extends State<CapturePreviewScreen> {
   Future<void> _cropImage() async {
     final cropped = await ImageCropper().cropImage(
       sourcePath: widget.imageFile.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Image',
+          toolbarColor: Colors.blue,
+          toolbarWidgetColor: Colors.white,
           lockAspectRatio: false,
+          hideBottomControls: false,
         ),
         IOSUiSettings(
           title: 'Crop Image',
           aspectRatioLockEnabled: false,
+          resetAspectRatioEnabled: true,
         ),
       ],
     );
-
     if (cropped != null) {
-      setState(() {
-        croppedFile = File(cropped.path);
-        isProcessing = true;
-      });
+      croppedFile = File(cropped.path);
       _processImage(croppedFile!);
     }
   }
@@ -90,12 +86,15 @@ class CapturePreviewScreenState extends State<CapturePreviewScreen> {
     await File(textPath).writeAsString(json.encode(savedFiles));
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("File Saved Successfully")),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("File Saved Successfully")));
+    Navigator.pop(context, true);
+  }
 
-    Navigator.pop(
-        context, true); // Ensure the screen reloads the saved files list
+  void _copyToClipboard() {
+    Clipboard.setData(ClipboardData(text: extractedText));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Text Copied to Clipboard")));
   }
 
   @override
@@ -109,13 +108,28 @@ class CapturePreviewScreenState extends State<CapturePreviewScreen> {
                   Image.file(File(croppedFile?.path ?? widget.imageFile.path))),
           if (isProcessing) const CircularProgressIndicator(),
           Expanded(
-              child: Text(
-                  extractedText.isNotEmpty ? extractedText : "No text found")),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: SingleChildScrollView(
+                child: Text(
+                  extractedText.isNotEmpty ? extractedText : "No text found",
+                  textAlign: TextAlign.left,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.1, // Reduced line spacing (adjust as needed)
+                  ),
+                  softWrap: true,
+                ),
+              ),
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(onPressed: _cropImage, child: const Text("Crop")),
               ElevatedButton(onPressed: _saveFile, child: const Text("Save")),
+              ElevatedButton(
+                  onPressed: _copyToClipboard, child: const Text("Copy")),
             ],
           ),
         ],

@@ -22,7 +22,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
     _loadSavedFiles();
   }
 
-  /// **Loads saved images & text from JSON**
   Future<void> _loadSavedFiles() async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
@@ -30,25 +29,24 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
       if (File(textPath).existsSync()) {
         String content = await File(textPath).readAsString();
-
-        /// ✅ Fix JSON parsing
         List<Map<String, dynamic>> rawData =
             List<Map<String, dynamic>>.from(json.decode(content));
 
         setState(() {
           savedFiles = rawData.map((e) => e.cast<String, String>()).toList();
         });
-
-        debugPrint("✅ Loaded ${savedFiles.length} saved files.");
-      } else {
-        debugPrint("⚠ No saved files found.");
       }
     } catch (e) {
-      debugPrint("❌ Load Error: $e");
+      debugPrint("Load Error: $e");
     }
   }
 
-  /// **Copies text to clipboard**
+  Future<void> _saveUpdatedFiles() async {
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final String textPath = '${appDir.path}/saved_texts.json';
+    await File(textPath).writeAsString(json.encode(savedFiles));
+  }
+
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +54,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
-  /// **Deletes a saved file**
   void _deleteFile(int index) async {
     bool confirmDelete = await _showDeleteConfirmation();
     if (!confirmDelete) return;
@@ -65,15 +62,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String textPath = '${appDir.path}/saved_texts.json';
 
-      // Delete image file
       File(savedFiles[index]["imagePath"]!).deleteSync();
-
-      // Remove from list
       setState(() {
         savedFiles.removeAt(index);
       });
 
-      // Save updated list
       await File(textPath).writeAsString(json.encode(savedFiles));
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,7 +77,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
     }
   }
 
-  /// **Shows confirmation dialog before deleting**
   Future<bool> _showDeleteConfirmation() async {
     return await showDialog(
           context: context,
@@ -106,16 +98,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
           ),
         ) ??
         false;
-  }
-
-  /// **Formats timestamp for display**
-  String _formatTimestamp(String timestamp) {
-    try {
-      DateTime dateTime = DateTime.parse(timestamp);
-      return DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
-    } catch (e) {
-      return "Unknown Time";
-    }
   }
 
   @override
@@ -146,9 +128,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      "📅 ${_formatTimestamp(savedFiles[index]["timestamp"] ?? '')}",
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                        "📅 ${savedFiles[index]["timestamp"] ?? "Unknown Time"}"),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == "copy") {
@@ -168,20 +148,25 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         ),
                       ],
                     ),
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => FullImageScreen(
                             imagePath: savedFiles[index]["imagePath"]!,
                             extractedText: savedFiles[index]["text"]!,
                             timestamp: savedFiles[index]["timestamp"] ?? '',
+                            note: savedFiles[index]["note"] ?? "",
                           ),
                         ),
                       );
+                      if (result != null && result is String) {
+                        setState(() {
+                          savedFiles[index]["note"] = result;
+                        });
+                        _saveUpdatedFiles();
+                      }
                     },
-                    onLongPress: () =>
-                        _copyToClipboard(savedFiles[index]["text"]!),
                   ),
                 );
               },

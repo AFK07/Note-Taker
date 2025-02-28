@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:flutter/services.dart'; // Clipboard
 import 'package:path_provider/path_provider.dart'; // File Storage
 import 'dart:convert'; // JSON Encoding
@@ -14,7 +14,8 @@ class TextDetectScreen extends StatefulWidget {
 }
 
 class _TextDetectScreenState extends State<TextDetectScreen> {
-  String detectedText = "Processing..."; // Default text
+  String detectedText = "Processing...";
+  bool isProcessing = true;
 
   @override
   void initState() {
@@ -22,50 +23,68 @@ class _TextDetectScreenState extends State<TextDetectScreen> {
     _processImage();
   }
 
-  /// Detects text from the captured image
+  /// **Extracts text from the image and formats it**
   Future<void> _processImage() async {
     final InputImage inputImage = InputImage.fromFile(widget.image);
-    final textRecognizer = GoogleMlKit.vision.textRecognizer();
+    final textRecognizer = TextRecognizer();
 
     try {
       final RecognizedText recognizedText =
           await textRecognizer.processImage(inputImage);
       setState(() {
-        detectedText = recognizedText.text.isNotEmpty
-            ? recognizedText.text
-            : "No text detected.";
+        detectedText = _formatText(recognizedText);
+        isProcessing = false;
       });
     } catch (e) {
       setState(() {
         detectedText = "Error processing image.";
+        isProcessing = false;
       });
-      debugPrint("Text Recognition Error: $e");
+      debugPrint("❌ Text Recognition Error: $e");
     } finally {
       textRecognizer.close();
     }
   }
 
-  /// Copies text to clipboard
+  /// **Formats detected text with paragraphs, bullet points, and numbered lists**
+  String _formatText(RecognizedText recognizedText) {
+    StringBuffer formattedText = StringBuffer();
+
+    for (TextBlock block in recognizedText.blocks) {
+      for (TextLine line in block.lines) {
+        String text = line.text.trim();
+
+        // Detect bullet points or numbered lists
+        if (RegExp(r'^[•\-]\s').hasMatch(text)) {
+          formattedText.writeln(text);
+        } else if (RegExp(r'^\d+\.\s').hasMatch(text)) {
+          formattedText.writeln(text);
+        } else {
+          formattedText.writeln("\n$text"); // Preserve paragraph spacing
+        }
+      }
+    }
+    return formattedText.toString().trim();
+  }
+
+  /// **Copies text to clipboard**
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: detectedText));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Copied to clipboard!")),
+      const SnackBar(content: Text("📋 Copied to clipboard!")),
     );
   }
 
-  /// Saves the image and text
+  /// **Saves the image and extracted text to local storage**
   Future<void> _saveFile() async {
     try {
-      // Get app storage directory
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String imagePath =
           '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String textPath = '${appDir.path}/saved_texts.json';
 
-      // Save Image
       await widget.image.copy(imagePath);
 
-      // Save Text in JSON
       List<Map<String, String>> savedData = [];
       if (File(textPath).existsSync()) {
         String content = await File(textPath).readAsString();
@@ -75,14 +94,13 @@ class _TextDetectScreenState extends State<TextDetectScreen> {
       savedData.add({"imagePath": imagePath, "text": detectedText});
       await File(textPath).writeAsString(json.encode(savedData));
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Saved Successfully!")),
+        const SnackBar(content: Text("✅ Saved Successfully!")),
       );
     } catch (e) {
-      debugPrint("Save Error: $e");
+      debugPrint("❌ Save Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to save.")),
+        const SnackBar(content: Text("❌ Failed to save.")),
       );
     }
   }
@@ -94,8 +112,6 @@ class _TextDetectScreenState extends State<TextDetectScreen> {
       body: Column(
         children: [
           Expanded(child: Image.file(widget.image, fit: BoxFit.cover)),
-
-          // Detected Text Display with Copy & Save Button
           Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
@@ -109,7 +125,7 @@ class _TextDetectScreenState extends State<TextDetectScreen> {
                 // Copyable Text Field
                 SelectableText(
                   detectedText,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16, height: 1.5),
                 ),
 
                 const SizedBox(height: 15),
