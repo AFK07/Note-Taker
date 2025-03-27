@@ -1,15 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
-import 'dart:convert'; // ✅ Fix: Import JSON handling
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dart_app/ui/text_detect/image_preview.dart';
-import 'package:dart_app/ui/text_detect/text_detect_screen.dart';
+import 'package:dart_app/ui/text_detect/text_detect_screen.dart'; // Ensure this import is correct
 
 class CaptureService {
-  /// **Handles Capturing & Processing Image**
-  Future<void> captureAndProcessImage(BuildContext context,
-      CameraController? cameraController, bool isCameraInitialized) async {
+  /// **Captures Image and Processes It**
+  Future<void> captureAndProcessImage(
+    BuildContext context,
+    CameraController? cameraController,
+    bool isCameraInitialized,
+  ) async {
     if (cameraController == null || !isCameraInitialized) {
       debugPrint("❌ Camera not initialized.");
       return;
@@ -27,15 +30,15 @@ class CaptureService {
         ),
       );
 
-      if (!context.mounted) return;
-      if (processedImage != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TextDetectScreen(image: processedImage),
-          ),
-        );
-      }
+      if (!context.mounted || processedImage == null) return;
+
+      // ✅ Use TextDetectScreen as a widget
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TextDetectScreen(image: processedImage),
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Error capturing image: $e');
     }
