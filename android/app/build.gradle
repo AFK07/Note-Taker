@@ -1,14 +1,14 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin") // Flutter plugin
+    id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services") // Firebase plugin
+    id("dev.flutter.flutter-gradle-plugin") // Flutter plugin
 }
 
 android {
-    namespace = "com.example.dart_app"
-    compileSdk = 34 // Updated to latest SDK version
-    ndkVersion = "25.1.8937393" // Ensure this matches your NDK version
+    namespace = "com.example.dart_app" // Make sure this matches your actual package
+    compileSdk = 34
+    ndkVersion = "25.1.8937393"
 
     defaultConfig {
         applicationId = "com.example.dart_app"
@@ -19,12 +19,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17 // Updated to Java 17
+        sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "17" // Updated to match Java 17
+        jvmTarget = "17"
     }
 
     buildTypes {
@@ -32,7 +32,10 @@ android {
             signingConfig = signingConfigs.debug
             minifyEnabled = false
             shrinkResources = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
@@ -42,15 +45,12 @@ flutter {
 }
 
 dependencies {
-    // Firebase BoM (Bill of Materials) for version management
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
 
-    // Firebase dependencies
-    implementation("com.google.firebase:firebase-analytics-ktx") // Firebase Analytics with Kotlin extensions
-    implementation("com.google.firebase:firebase-auth-ktx") // Firebase Authentication with Kotlin extensions
-    implementation("com.google.firebase:firebase-firestore-ktx") // Firestore with Kotlin extensions
-    implementation("com.google.firebase:firebase-storage-ktx") // Firebase Storage with Kotlin extensions
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
 
-    // Flutter dependencies (if needed)
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.10"
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
 }

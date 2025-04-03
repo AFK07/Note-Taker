@@ -1,0 +1,17 @@
+name: image_downloader
+description: A custom plugin for downloading images
+version: 0.0.1
+environment:
+  sdk: ">=3.6.1 <4.0.0"
+  flutter: ">=3.19.0"
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.ko2ic.imagedownloader
+        pluginClass: ImageDownloaderPlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
