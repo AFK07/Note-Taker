@@ -7,18 +7,19 @@ class AuthService extends ChangeNotifier {
   User? _user;
   User? get user => _user;
 
-  // Check login state stream
+  // Constructor to listen to auth state changes
   AuthService() {
+    _user = _auth.currentUser;
     _auth.authStateChanges().listen((User? newUser) {
       _user = newUser;
-      notifyListeners(); // Notifies UI of auth state changes
+      notifyListeners();
     });
   }
 
-  // 📌 Helper: Is user logged in?
+  // Check if user is logged in
   bool get isLoggedIn => _user != null;
 
-  // 🔐 Sign Up with Email & Password
+  /// Sign up with email and password
   Future<String?> signUp(String email, String password) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -26,8 +27,10 @@ class AuthService extends ChangeNotifier {
         password: password.trim(),
       );
       _user = credential.user;
+      await _user?.reload(); // ensure info is fresh
+      _user = _auth.currentUser;
       notifyListeners();
-      return null; // Success
+      return null;
     } on FirebaseAuthException catch (e) {
       debugPrint('❌ SignUp Error [${e.code}]: ${e.message}');
       return _getFriendlyError(e.code, e.message);
@@ -37,7 +40,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // 🔓 Sign In with Email & Password
+  /// Sign in with email and password
   Future<String?> signIn(String email, String password) async {
     try {
       final credential = await _auth.signInWithEmailAndPassword(
@@ -45,8 +48,10 @@ class AuthService extends ChangeNotifier {
         password: password.trim(),
       );
       _user = credential.user;
+      await _user?.reload();
+      _user = _auth.currentUser;
       notifyListeners();
-      return null; // Success
+      return null;
     } on FirebaseAuthException catch (e) {
       debugPrint('❌ SignIn Error [${e.code}]: ${e.message}');
       return _getFriendlyError(e.code, e.message);
@@ -56,14 +61,14 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // 🚪 Sign Out
+  /// Sign out the current user
   Future<void> signOut() async {
     await _auth.signOut();
     _user = null;
     notifyListeners();
   }
 
-  // 🧠 Translate Firebase error codes
+  /// Friendly error messages
   String _getFriendlyError(String code, String? message) {
     switch (code) {
       case 'email-already-in-use':
@@ -71,7 +76,7 @@ class AuthService extends ChangeNotifier {
       case 'invalid-email':
         return 'The email address is invalid.';
       case 'operation-not-allowed':
-        return 'This sign-in method is not enabled.';
+        return 'This sign-in method is not enabled in Firebase.';
       case 'weak-password':
         return 'The password is too weak. Use at least 6 characters.';
       case 'user-not-found':
@@ -80,6 +85,8 @@ class AuthService extends ChangeNotifier {
         return 'Incorrect password.';
       case 'network-request-failed':
         return 'Network error. Please check your connection.';
+      case 'configuration-not-found':
+        return 'Firebase authentication is not configured correctly.';
       default:
         return message ?? 'Authentication error. Please try again.';
     }

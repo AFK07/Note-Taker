@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:dart_app/core/services/capture_service.dart';
+// import 'package:dart_app/core/services/capture_service.dart';
 import 'package:dart_app/ui/saved/gallery_screen.dart';
 import 'package:dart_app/ui/audio/audio_screen.dart';
 import 'package:dart_app/ui/camera/capture_preview_screen.dart';
@@ -16,7 +16,7 @@ class CameraScreenState extends State<CameraScreen> {
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
   bool _isCameraCentered = true; // ✅ Tracks which button is centered
-  final CaptureService _captureService = CaptureService();
+  // final CaptureService _captureService = CaptureService();
 
   @override
   void initState() {

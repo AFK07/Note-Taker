@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'account_detail.dart'; // ✅ Correct import for LoggedInScreen
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _gender;
   bool _isLogin = true;
   String _message = '';
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _authenticate() async {
     if (_emailController.text.trim().isEmpty ||
@@ -28,18 +39,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _lastNameController.text.trim().isEmpty ||
                 _dob == null ||
                 _gender == null))) {
-      setState(() => _message = '❌ Please fill all required fields');
+      _showSnackBar('❌ Please fill all required fields', Colors.red);
       return;
     }
 
     try {
       if (_isLogin) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
+        final userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-        setState(() => _message = '✅ Logged in successfully!');
         _showSnackBar('✅ Logged in successfully!', Colors.green);
+        _navigateToLoggedIn(userCredential.user!);
       } else {
         final credential =
             await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -60,27 +72,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'email': user.email,
             'createdAt': FieldValue.serverTimestamp(),
           });
+          _showSnackBar('✅ Account created and info saved!', Colors.green);
+          _navigateToLoggedIn(user);
         }
-
-        setState(() => _message = '✅ Account created and info saved!');
-        _showSnackBar('✅ Account created and info saved!', Colors.green);
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuthException: ${e.code} | ${e.message}');
       final msg = _getFriendlyMessage(e.code, e.message);
-      setState(() => _message = '❌ $msg');
       _showSnackBar('❌ $msg', Colors.red);
     } catch (e) {
       debugPrint('Unexpected error: $e');
-      const msg = '❌ Something went wrong';
-      setState(() => _message = msg);
-      _showSnackBar(msg, Colors.red);
+      _showSnackBar('❌ Something went wrong', Colors.red);
     }
   }
 
-  void _showSnackBar(String text, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: color),
+  void _navigateToLoggedIn(User user) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => LoggedInScreen(user: user)),
     );
   }
 
@@ -98,9 +107,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return 'No user found with this email.';
       case 'wrong-password':
         return 'Incorrect password.';
+      case 'configuration-not-found':
+        return 'Firebase Auth is not properly configured.';
       default:
         return fallback ?? 'An authentication error occurred.';
     }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    setState(() => _message = message);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
   }
 
   Future<void> _pickDateOfBirth() async {
@@ -124,133 +142,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       appBar: AppBar(title: Text(_isLogin ? "Login" : "Register")),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: user == null
-              ? SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!_isLogin) ...[
+                  _buildHalfWidthField(TextField(
+                    controller: _firstNameController,
+                    decoration: const InputDecoration(labelText: 'First Name'),
+                  )),
+                  const SizedBox(height: 10),
+                  _buildHalfWidthField(TextField(
+                    controller: _lastNameController,
+                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  )),
+                  const SizedBox(height: 10),
+                  _buildHalfWidthField(Row(
                     children: [
-                      if (!_isLogin) ...[
-                        _buildHalfWidthField(
-                          TextField(
-                            controller: _firstNameController,
-                            decoration:
-                                const InputDecoration(labelText: 'First Name'),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildHalfWidthField(
-                          TextField(
-                            controller: _lastNameController,
-                            decoration:
-                                const InputDecoration(labelText: 'Last Name'),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildHalfWidthField(
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _dob == null
-                                      ? "Select Date of Birth"
-                                      : "DOB: ${_dob!.toLocal().toString().split(' ')[0]}",
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.calendar_today),
-                                onPressed: _pickDateOfBirth,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildHalfWidthField(
-                          DropdownButtonFormField<String>(
-                            value: _gender,
-                            hint: const Text("Select Gender"),
-                            onChanged: (value) =>
-                                setState(() => _gender = value),
-                            items: const [
-                              DropdownMenuItem(
-                                  value: "Male", child: Text("Male")),
-                              DropdownMenuItem(
-                                  value: "Female", child: Text("Female")),
-                              DropdownMenuItem(
-                                  value: "Other", child: Text("Other")),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                      _buildHalfWidthField(
-                        TextField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(labelText: 'Email'),
+                      Expanded(
+                        child: Text(
+                          _dob == null
+                              ? "Select Date of Birth"
+                              : "DOB: ${_dob!.toLocal().toString().split(' ')[0]}",
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      _buildHalfWidthField(
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration:
-                              const InputDecoration(labelText: 'Password'),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _authenticate,
-                        child: Text(_isLogin ? 'Login' : 'Register'),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() => _isLogin = !_isLogin),
-                        child: Text(_isLogin
-                            ? "Don't have an account? Register"
-                            : "Already have an account? Login"),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _message,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: _pickDateOfBirth,
                       ),
                     ],
-                  ),
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.account_circle, size: 100),
-                    const SizedBox(height: 20),
-                    Text(
-                      "Logged in as:\n${user.email ?? user.uid}",
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await FirebaseAuth.instance.signOut();
+                  )),
+                  const SizedBox(height: 10),
+                  _buildHalfWidthField(DropdownButtonFormField<String>(
+                    value: _gender,
+                    hint: const Text("Select Gender"),
+                    onChanged: (value) => setState(() => _gender = value),
+                    items: const [
+                      DropdownMenuItem(value: "Male", child: Text("Male")),
+                      DropdownMenuItem(value: "Female", child: Text("Female")),
+                      DropdownMenuItem(value: "Other", child: Text("Other")),
+                    ],
+                  )),
+                  const SizedBox(height: 10),
+                ],
+                _buildHalfWidthField(TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                )),
+                const SizedBox(height: 10),
+                _buildHalfWidthField(TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      onPressed: () {
                         setState(() {
-                          _emailController.clear();
-                          _passwordController.clear();
-                          _firstNameController.clear();
-                          _lastNameController.clear();
-                          _dob = null;
-                          _gender = null;
-                          _message = '';
+                          _obscurePassword = !_obscurePassword;
                         });
                       },
-                      icon: const Icon(Icons.logout),
-                      label: const Text("Sign Out"),
                     ),
-                  ],
+                  ),
+                )),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _authenticate,
+                  child: Text(_isLogin ? 'Login' : 'Register'),
                 ),
+                TextButton(
+                  onPressed: () => setState(() => _isLogin = !_isLogin),
+                  child: Text(_isLogin
+                      ? "Don't have an account? Register"
+                      : "Already have an account? Login"),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _message,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

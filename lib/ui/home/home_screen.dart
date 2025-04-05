@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 import 'package:dart_app/ui/camera/camera_screen.dart';
 import 'package:dart_app/ui/saved/gallery_screen.dart';
 import 'package:dart_app/ui/auth/profile_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:dart_app/ui/auth/account_detail.dart';
 import 'package:dart_app/firebase_options.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -17,10 +20,18 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => LoggedInScreen(user: user)),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              }
             },
           ),
         ],
@@ -35,7 +46,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CameraScreen()),
+                  MaterialPageRoute(builder: (_) => const CameraScreen()),
                 );
               },
             ),
@@ -46,8 +57,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const GalleryScreen()),
+                  MaterialPageRoute(builder: (_) => const GalleryScreen()),
                 );
               },
             ),
