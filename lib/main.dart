@@ -4,15 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
 import 'package:dart_app/ui/auth/profile_screen.dart';
-import 'package:dart_app/ui/auth/account_detail.dart'; // ✅ Ensure this is correct
+import 'package:dart_app/ui/auth/account_detail.dart'; // ✅ Correct import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
   runApp(const MyApp());
 }
 
@@ -24,17 +22,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Smart Note Taker',
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-      ),
-      home: const AuthGate(), // Use dedicated gate widget for clarity
+      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      home: AuthGate(),
     );
   }
 }
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -45,9 +39,9 @@ class AuthGate extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasData && snapshot.data != null) {
-          return LoggedInScreen(user: snapshot.data!);
+          return AccountDetailScreen(user: snapshot.data!); // ✅ Fixed name
         } else {
-          return const ProfileScreen(); // fallback login/register screen
+          return const ProfileScreen(); // fallback auth screen
         }
       },
     );

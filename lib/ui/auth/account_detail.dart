@@ -1,18 +1,21 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dart_app/ui/home/home_screen.dart';
+import 'package:dart_app/ui/auth/account_detail/widgets/change_email_dialog.dart';
+import 'package:dart_app/ui/auth/account_detail/widgets/change_password_dialog.dart';
+import 'package:dart_app/ui/auth/account_detail/widgets/delete_account_dialog.dart';
+import 'package:dart_app/ui/auth/account_detail/widgets/verify_email_button.dart';
 
-class LoggedInScreen extends StatefulWidget {
+class AccountDetailScreen extends StatefulWidget {
   final User user;
 
-  const LoggedInScreen({super.key, required this.user});
+  const AccountDetailScreen({super.key, required this.user});
 
   @override
-  State<LoggedInScreen> createState() => _LoggedInScreenState();
+  State<AccountDetailScreen> createState() => _AccountDetailScreenState();
 }
 
-class _LoggedInScreenState extends State<LoggedInScreen> {
-  bool isVerifying = false;
+class _AccountDetailScreenState extends State<AccountDetailScreen> {
   late User currentUser;
 
   @override
@@ -29,125 +32,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
     });
   }
 
-  Future<void> _sendVerificationEmail() async {
-    try {
-      setState(() => isVerifying = true);
-      await currentUser.sendEmailVerification();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("📨 Verification email sent!")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Failed to send email: $e")),
-      );
-    } finally {
-      setState(() => isVerifying = false);
-    }
-  }
-
-  Future<void> _changeEmail() async {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Change Email"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "New Email"),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: "Current Password"),
-              obscureText: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              final newEmail = emailController.text.trim();
-              final password = passwordController.text.trim();
-              Navigator.pop(context);
-
-              try {
-                final cred = EmailAuthProvider.credential(
-                  email: currentUser.email!,
-                  password: password,
-                );
-                await currentUser.reauthenticateWithCredential(cred);
-                await currentUser.updateEmail(newEmail);
-                await _reloadUser();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("✅ Email updated")),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("❌ Error: $e")),
-                );
-              }
-            },
-            child: const Text("Submit"),
-          ),
-        ],
-      ),
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
     );
-  }
-
-  Future<void> _changePassword() async {
-    final controller = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Change Password"),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: "New Password"),
-          obscureText: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await currentUser.updatePassword(controller.text.trim());
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("✅ Password updated")),
-                );
-              } catch (e) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("❌ Error: $e")),
-                );
-              }
-            },
-            child: const Text("Submit"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _deleteAccount() async {
-    try {
-      await currentUser.delete();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("🗑 Account deleted")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error: $e")),
-      );
-    }
   }
 
   @override
@@ -167,8 +55,8 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
           title: const Text('Account Options'),
           actions: [
             IconButton(
-              onPressed: _reloadUser,
               icon: const Icon(Icons.refresh),
+              onPressed: _reloadUser,
               tooltip: "Refresh",
             )
           ],
@@ -194,25 +82,45 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                   ),
                 ),
                 if (!isVerified)
-                  ElevatedButton.icon(
-                    onPressed: isVerifying ? null : _sendVerificationEmail,
-                    icon: const Icon(Icons.mark_email_unread),
-                    label: Text(
-                        isVerifying ? "Sending..." : "Send Verification Email"),
+                  VerifyEmailButton(
+                    isVerifying: false,
+                    onSendEmail: _reloadUser,
+                    user: currentUser,
                   ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
-                  onPressed: _changeEmail,
+                  onPressed: () {
+                    _showSnackBar(
+                        "ℹ️ Change Name feature coming soon!", Colors.blue);
+                  },
+                  icon: const Icon(Icons.person),
+                  label: const Text("🔄 Change Name"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => showChangeEmailDialog(
+                    context,
+                    currentUser,
+                    _reloadUser,
+                    _showSnackBar,
+                  ),
                   icon: const Icon(Icons.email),
                   label: const Text("📧 Change Email"),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _changePassword,
+                  onPressed: () => showChangePasswordDialog(
+                    context,
+                    currentUser,
+                    _showSnackBar,
+                  ),
                   icon: const Icon(Icons.lock),
                   label: const Text("🔑 Change Password"),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _deleteAccount,
+                  onPressed: () => showDeleteAccountDialog(
+                    context,
+                    currentUser,
+                    _showSnackBar,
+                  ),
                   icon: const Icon(Icons.delete),
                   label: const Text("🗑 Delete Account"),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -220,10 +128,12 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                 ElevatedButton.icon(
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    );
+                    if (mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.logout),
                   label: const Text("🚪 Logout"),

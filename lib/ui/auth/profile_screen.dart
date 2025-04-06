@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'account_detail.dart'; // ✅ Correct import for LoggedInScreen
+import 'account_detail.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,8 +19,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DateTime? _dob;
   String? _gender;
   bool _isLogin = true;
-  String _message = '';
   bool _obscurePassword = true;
+  String _message = '';
 
   @override
   void dispose() {
@@ -50,6 +50,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+
+        if (!mounted) return;
+
         _showSnackBar('✅ Logged in successfully!', Colors.green);
         _navigateToLoggedIn(userCredential.user!);
       } else {
@@ -72,6 +75,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'email': user.email,
             'createdAt': FieldValue.serverTimestamp(),
           });
+
+          if (!mounted) return;
+
           _showSnackBar('✅ Account created and info saved!', Colors.green);
           _navigateToLoggedIn(user);
         }
@@ -89,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _navigateToLoggedIn(User user) {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => LoggedInScreen(user: user)),
+      MaterialPageRoute(builder: (_) => AccountDetailScreen(user: user)),
     );
   }
 
@@ -143,7 +149,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isLogin ? "Login" : "Register")),
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        title: Text(_isLogin ? "Login" : "Register"),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -205,11 +214,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icon(_obscurePassword
                           ? Icons.visibility_off
                           : Icons.visibility),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 )),
