@@ -10,7 +10,8 @@ class NoteEditor extends StatefulWidget {
   final String imagePath;
   final String initialNote;
 
-  const NoteEditor({super.key, required this.imagePath, required this.initialNote});
+  const NoteEditor(
+      {super.key, required this.imagePath, required this.initialNote});
 
   @override
   State<NoteEditor> createState() => _NoteEditorState();
@@ -54,7 +55,8 @@ class _NoteEditorState extends State<NoteEditor> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text("Allow Image Access"),
-        content: const Text("Choose how you want to allow image access for notes."),
+        content:
+            const Text("Choose how you want to allow image access for notes."),
         actions: [
           TextButton(
             onPressed: () {
@@ -99,11 +101,11 @@ class _NoteEditorState extends State<NoteEditor> {
   Future<void> _loadAttachedImages() async {
     final Directory appDir = await getApplicationDocumentsDirectory();
     final String imagesPath = '${appDir.path}/notes_images.json';
-    
+
     if (File(imagesPath).existsSync()) {
       String content = await File(imagesPath).readAsString();
       List<String> imagePaths = List<String>.from(json.decode(content));
-      
+
       setState(() {
         attachedImages = imagePaths.map((path) => File(path)).toList();
       });
@@ -113,23 +115,26 @@ class _NoteEditorState extends State<NoteEditor> {
   Future<void> _pickImage() async {
     if (!hasStoragePermission) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Storage permission required to add images.")),
+        const SnackBar(
+            content: Text("Storage permission required to add images.")),
       );
       return;
     }
-    
+
     final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String savedImagePath = '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String savedImagePath =
+          '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
       await File(pickedFile.path).copy(savedImagePath);
 
       setState(() {
         attachedImages.add(File(savedImagePath));
       });
-      
+
       _saveAttachedImages();
     }
   }

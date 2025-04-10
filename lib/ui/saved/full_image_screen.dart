@@ -34,40 +34,22 @@ class _FullImageScreenState extends State<FullImageScreen> {
     super.initState();
     userNote = widget.note;
     Future.delayed(const Duration(milliseconds: 300), () {
-      setState(() => _isLoading = false);
-    });
-  }
-
-  Future<void> _saveNote() async {
-    final Directory appDir = await getApplicationDocumentsDirectory();
-    final String textPath = '${appDir.path}/saved_texts.json';
-    List<Map<String, String>> savedFiles = [];
-
-    if (File(textPath).existsSync()) {
-      String content = await File(textPath).readAsString();
-      List<Map<String, dynamic>> rawData =
-          List<Map<String, dynamic>>.from(json.decode(content));
-      savedFiles = rawData.map((e) => e.cast<String, String>()).toList();
-    }
-
-    for (var file in savedFiles) {
-      if (file["imagePath"] == widget.imagePath) {
-        file["note"] = userNote;
-        break;
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
-    }
-
-    await File(textPath).writeAsString(json.encode(savedFiles));
+    });
   }
 
   Future<void> _downloadImage() async {
     try {
       await ImageDownloader.downloadImage(widget.imagePath);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Image downloaded')),
       );
     } catch (e) {
       debugPrint('❌ Download error: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ Download failed: $e')),
       );
@@ -121,8 +103,8 @@ class _FullImageScreenState extends State<FullImageScreen> {
                 _deleteImage();
               }
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'delete', child: Text('Delete Image')),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'delete', child: Text('Delete Image')),
             ],
           )
         ],
@@ -152,9 +134,10 @@ class _FullImageScreenState extends State<FullImageScreen> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            spreadRadius: 2),
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          spreadRadius: 2,
+                        ),
                       ],
                     ),
                     child: SingleChildScrollView(
@@ -164,13 +147,17 @@ class _FullImageScreenState extends State<FullImageScreen> {
                           Text(
                             "📅 Captured on: ${_formatTimestamp(widget.timestamp)}",
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           const Text(
                             "📜 Extracted Text:",
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Text(

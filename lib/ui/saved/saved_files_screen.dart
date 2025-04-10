@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Added for Clipboard
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
-import 'package:dart_app/ui/saved/full_image_screen.dart';
+//import 'package:dart_app/ui/saved/full_image_screen.dart';
 
 class SavedFilesScreen extends StatefulWidget {
   const SavedFilesScreen({super.key});

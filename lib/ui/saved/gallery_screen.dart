@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:dart_app/ui/saved/full_image_screen.dart';
 
@@ -32,6 +31,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         List<Map<String, dynamic>> rawData =
             List<Map<String, dynamic>>.from(json.decode(content));
 
+        if (!mounted) return;
         setState(() {
           savedFiles = rawData.map((e) => e.cast<String, String>()).toList();
         });
@@ -69,6 +69,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
       await File(textPath).writeAsString(json.encode(savedFiles));
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("🗑 Deleted Successfully!")),
       );
@@ -160,6 +161,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           ),
                         ),
                       );
+
+                      if (!mounted) return;
+
                       if (result != null && result is String) {
                         setState(() {
                           savedFiles[index]["note"] = result;

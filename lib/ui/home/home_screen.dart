@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:dart_app/firebase_options.dart';
-import 'package:dart_app/ui/camera/camera_screen.dart';
+import 'package:dart_app/ui/camera/camera_main_wrapper.dart' as cam;
 import 'package:dart_app/ui/saved/gallery_screen.dart';
 import 'package:dart_app/ui/auth/profile_screen.dart';
 import 'package:dart_app/ui/auth/account_detail.dart';
@@ -14,10 +14,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // 🚫 Disable system back navigation
+      canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false, // 🚫 Remove back arrow
+          automaticallyImplyLeading: false,
           title: const Text("Smart Note Taker"),
           actions: [
             IconButton(
@@ -47,7 +47,8 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CameraScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const cam.CameraMainWrapper()),
                   );
                 },
               ),
@@ -71,8 +72,8 @@ class HomeScreen extends StatelessWidget {
                     final result = await Firebase.initializeApp(
                       options: DefaultFirebaseOptions.currentPlatform,
                     );
-                    if (!context.mounted)
-                      return; // ✅ Avoid using context if widget is unmounted
+                    if (!context.mounted) return;
+
                     debugPrint("✅ Firebase Initialized: ${result.name}");
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

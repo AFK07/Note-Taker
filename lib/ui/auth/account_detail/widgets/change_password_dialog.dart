@@ -14,112 +14,159 @@ Future<void> showChangePasswordDialog(
   bool obscureNew = true;
   bool obscureConfirm = true;
 
+  String currentError = '';
+  String newError = '';
+  String confirmError = '';
+  bool isCurrentPasswordCorrect = false;
+
+  void validateInputs(StateSetter setState) {
+    final current = currentController.text.trim();
+    final newPass = newController.text.trim();
+    final confirm = confirmController.text.trim();
+
+    // Reset errors
+    currentError = '';
+    newError = '';
+    confirmError = '';
+
+    if (current.isEmpty) {
+      currentError = 'Required';
+    }
+
+    if (newPass.isEmpty) {
+      newError = 'Required';
+    } else if (newPass.length < 6) {
+      newError = 'Min 6 characters';
+    } else if (current == newPass) {
+      newError = 'New password must be different';
+    }
+
+    if (confirm.isEmpty) {
+      confirmError = 'Required';
+    } else if (newPass != confirm) {
+      confirmError = 'Passwords do not match';
+    }
+
+    setState(() {});
+  }
+
   await showDialog(
     context: context,
+    barrierDismissible: false,
     builder: (_) {
       return StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text("Change Password"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                TextField(
-                  controller: currentController,
-                  obscureText: obscureCurrent,
-                  decoration: InputDecoration(
-                    labelText: "Current Password",
-                    suffixIcon: IconButton(
-                      icon: Icon(obscureCurrent
-                          ? Icons.visibility
-                          : Icons.visibility_off),
-                      onPressed: () =>
-                          setState(() => obscureCurrent = !obscureCurrent),
+        builder: (context, setState) {
+          final isValid = isCurrentPasswordCorrect &&
+              currentError.isEmpty &&
+              newError.isEmpty &&
+              confirmError.isEmpty &&
+              newController.text.trim().length >= 6 &&
+              newController.text.trim() != currentController.text.trim() &&
+              newController.text.trim() == confirmController.text.trim();
+
+          return AlertDialog(
+            title: const Text("Change Password"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: currentController,
+                    obscureText: obscureCurrent,
+                    decoration: InputDecoration(
+                      labelText: "Current Password",
+                      errorText: currentError.isNotEmpty ? currentError : null,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureCurrent
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () =>
+                            setState(() => obscureCurrent = !obscureCurrent),
+                      ),
                     ),
+                    onChanged: (_) => validateInputs(setState),
                   ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: newController,
-                  obscureText: obscureNew,
-                  decoration: InputDecoration(
-                    labelText: "New Password",
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                          obscureNew ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => obscureNew = !obscureNew),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: newController,
+                    obscureText: obscureNew,
+                    decoration: InputDecoration(
+                      labelText: "New Password",
+                      errorText: newError.isNotEmpty ? newError : null,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureNew ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () =>
+                            setState(() => obscureNew = !obscureNew),
+                      ),
                     ),
+                    onChanged: (_) => validateInputs(setState),
                   ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: confirmController,
-                  obscureText: obscureConfirm,
-                  decoration: InputDecoration(
-                    labelText: "Confirm New Password",
-                    suffixIcon: IconButton(
-                      icon: Icon(obscureConfirm
-                          ? Icons.visibility
-                          : Icons.visibility_off),
-                      onPressed: () =>
-                          setState(() => obscureConfirm = !obscureConfirm),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: confirmController,
+                    obscureText: obscureConfirm,
+                    decoration: InputDecoration(
+                      labelText: "Confirm New Password",
+                      errorText: confirmError.isNotEmpty ? confirmError : null,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureConfirm
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () =>
+                            setState(() => obscureConfirm = !obscureConfirm),
+                      ),
                     ),
+                    onChanged: (_) => validateInputs(setState),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                final current = currentController.text.trim();
-                final newPass = newController.text.trim();
-                final confirm = confirmController.text.trim();
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: isValid
+                    ? () async {
+                        try {
+                          final cred = EmailAuthProvider.credential(
+                            email: user.email!,
+                            password: currentController.text.trim(),
+                          );
+                          await user.reauthenticateWithCredential(cred);
+                          await user.updatePassword(newController.text.trim());
 
-                Navigator.pop(context);
-
-                if (newPass.isEmpty || confirm.isEmpty || current.isEmpty) {
-                  showSnackBar("❌ All fields are required", Colors.red);
-                  return;
-                }
-
-                if (newPass.length < 6) {
-                  showSnackBar(
-                      "❌ Password must be at least 6 characters", Colors.red);
-                  return;
-                }
-
-                if (newPass != confirm) {
-                  showSnackBar("❌ New passwords do not match", Colors.red);
-                  return;
-                }
-
-                try {
-                  final cred = EmailAuthProvider.credential(
-                    email: user.email!.trim(),
-                    password: current,
-                  );
-                  await user.reauthenticateWithCredential(cred);
-                  await user.updatePassword(newPass);
-                  showSnackBar("✅ Password updated", Colors.green);
-                } on FirebaseAuthException catch (e) {
-                  if (e.code == 'wrong-password') {
-                    showSnackBar("❌ Incorrect current password", Colors.red);
-                  } else if (e.code == 'requires-recent-login') {
-                    showSnackBar("❌ Session expired. Please sign in again.",
-                        Colors.orange);
-                  } else {
-                    showSnackBar("❌ Firebase error: ${e.message}", Colors.red);
-                  }
-                } catch (e) {
-                  showSnackBar("❌ Error: $e", Colors.red);
-                }
-              },
-              child: const Text("Submit"),
-            ),
-          ],
-        ),
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          showSnackBar("✅ Password updated", Colors.green);
+                        } on FirebaseAuthException catch (e) {
+                          setState(() {
+                            isCurrentPasswordCorrect = false;
+                            if (e.code == 'wrong-password') {
+                              currentError = 'Incorrect password';
+                            } else {
+                              currentError =
+                                  e.message ?? 'Unexpected error occurred';
+                            }
+                          });
+                        }
+                      }
+                    : null,
+                style: TextButton.styleFrom(
+                  foregroundColor: isValid ? null : Colors.grey,
+                ),
+                child: const Text("Submit"),
+              ),
+            ],
+          );
+        },
       );
     },
   );
