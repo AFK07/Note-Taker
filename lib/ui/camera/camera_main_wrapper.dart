@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,8 +6,9 @@ import 'package:dart_app/ui/saved/gallery_screen.dart';
 import 'package:dart_app/ui/home/home_screen.dart';
 
 import 'capture_preview_screen.dart';
+import 'action_bar.dart'; // Import ActionBar
 
-/// 🎤 AUDIO SCREEN (Placeholder)
+// 🎤 AUDIO SCREEN (Placeholder)
 class AudioScreen extends StatelessWidget {
   const AudioScreen({super.key});
 
@@ -23,7 +23,7 @@ class AudioScreen extends StatelessWidget {
   }
 }
 
-/// 📷 CAMERA SCREEN
+// 📷 CAMERA SCREEN
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
 
@@ -32,9 +32,6 @@ class CameraScreen extends StatefulWidget {
 }
 
 class CameraScreenState extends State<CameraScreen> {
-  static CameraScreenState? of(BuildContext context) =>
-      context.findAncestorStateOfType<CameraScreenState>();
-
   CameraController? _controller;
   bool _initialized = false;
   Offset? _tapPosition;
@@ -125,7 +122,7 @@ class CameraScreenState extends State<CameraScreen> {
   }
 }
 
-/// 🎛 MAIN WRAPPER
+// 🎛 MAIN WRAPPER
 class CameraMainWrapper extends StatefulWidget {
   final String? imagePath;
   const CameraMainWrapper({super.key, this.imagePath});
@@ -136,7 +133,6 @@ class CameraMainWrapper extends StatefulWidget {
 
 class _CameraMainWrapperState extends State<CameraMainWrapper> {
   final GlobalKey<CameraScreenState> _cameraKey = GlobalKey();
-
   int _selectedIndex = 2;
 
   late List<Widget> _screens;
@@ -177,20 +173,19 @@ class _CameraMainWrapperState extends State<CameraMainWrapper> {
       body: Stack(
         children: [
           Positioned.fill(child: _screens[_selectedIndex]),
-          if (_selectedIndex == 2)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 100),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: const [
-                    HaloRing(),
-                    CaptureButton(),
-                  ],
-                ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: Stack(
+                alignment: Alignment.center,
+                children: const [
+                  HaloRing(),
+                  CaptureButton(),
+                ],
               ),
             ),
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -198,62 +193,13 @@ class _CameraMainWrapperState extends State<CameraMainWrapper> {
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900]!.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(36),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _NavIcon(
-                        icon: Icons.arrow_back_ios_new,
-                        selected: false,
-                        onTap: () => _onItemTapped(0),
-                        color: Colors.white),
-                    const SizedBox(width: 20),
-                    _NavIcon(
-                        icon: Icons.photo_library,
-                        selected: false,
-                        onTap: () => _onItemTapped(1),
-                        color: Colors.white),
-                    const SizedBox(width: 20),
-                    GestureDetector(
-                      onTap: () {
-                        if (_selectedIndex == 2) {
-                          _cameraKey.currentState?._captureAndProcess();
-                        } else {
-                          _onItemTapped(2);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.red,
-                        ),
-                        child: const Icon(Icons.camera_alt,
-                            color: Colors.white, size: 26),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    _NavIcon(
-                        icon: Icons.mic,
-                        selected: _selectedIndex == 3,
-                        onTap: () => _onItemTapped(3),
-                        color: Colors.white),
-                    const SizedBox(width: 20),
-                    _NavIcon(
-                        icon: Icons.share,
-                        selected: false,
-                        onTap: () {},
-                        color: Colors.white),
-                  ],
+                child: ActionBar(
+                  // ActionBar moved here at the bottom
+                  onBack: () => _onItemTapped(0),
+                  onGallery: () => _onItemTapped(1),
+                  onCamera: () => _onItemTapped(2),
+                  onAudio: () => _onItemTapped(3),
+                  onShare: () {},
                 ),
               ),
             ),
@@ -264,34 +210,7 @@ class _CameraMainWrapperState extends State<CameraMainWrapper> {
   }
 }
 
-/// 🔘 NAV ICON BUTTON
-class _NavIcon extends StatelessWidget {
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _NavIcon({
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-    this.color = Colors.white,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(
-        icon,
-        color: selected ? color : color.withOpacity(0.5),
-        size: 26,
-      ),
-    );
-  }
-}
-
-/// 📸 CAPTURE BUTTON (Transparent inner with white ring only)
+// 📸 CAPTURE BUTTON (Transparent inner with white ring only)
 class CaptureButton extends StatelessWidget {
   const CaptureButton({super.key});
 
@@ -313,7 +232,7 @@ class CaptureButton extends StatelessWidget {
   }
 }
 
-/// 🌟 HALO EFFECT
+// 🌟 HALO EFFECT
 class HaloRing extends StatelessWidget {
   const HaloRing({super.key});
 

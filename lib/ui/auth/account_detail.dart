@@ -56,7 +56,18 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false, // Disable default back button
           title: const Text('Account Settings'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              // Ensure the back button takes to the HomeScreen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            },
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
