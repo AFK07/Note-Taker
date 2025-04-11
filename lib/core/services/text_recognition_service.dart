@@ -19,10 +19,11 @@ class TextRecognitionService {
           String lineText = line.text.trim();
 
           final isBullet =
-              RegExp(r'^(\•|\*|\-|\u2022)\s+'); // includes Unicode bullets
-          final isNumbered = RegExp(r'^\d+[\.\)]\s+'); // e.g., 1. or 2)
+              RegExp(r'^(•|\*|\-|\•)\s+'); // includes Unicode bullets
+          final isNumbered = RegExp(r'^(\d+)[\.\)]\s+'); // e.g., 1. or 2)
           final isCheckbox = RegExp(r'^\[\s?\]'); // [ ] checkbox
-          final isCodeFile = RegExp(r'\.(dart|py|js|ts|java|txt|json|yaml)$');
+          final isCodeLike = RegExp(r'^\d+\$'); // single line numbers
+          final isCodeFile = RegExp(r'\.(dart|py|js|ts|java|txt|json|yaml)\$');
           final isTitle = lineText.toLowerCase().endsWith(':');
           final isLikelyBulletByIndent =
               lineText.startsWith(RegExp(r'\s{2,}')) &&
@@ -31,22 +32,22 @@ class TextRecognitionService {
           if (isBullet.hasMatch(lineText)) {
             formattedText
                 .writeln('• ${lineText.replaceFirst(isBullet, '').trim()}');
-          } else if (isNumbered.hasMatch(lineText)) {
-            formattedText.writeln(lineText);
           } else if (isCheckbox.hasMatch(lineText)) {
             formattedText
                 .writeln('☐ ${lineText.replaceFirst(isCheckbox, '').trim()}');
           } else if (isLikelyBulletByIndent) {
-            formattedText.writeln('• $lineText'); // inferred bullet
+            formattedText.writeln('• $lineText');
           } else if (isCodeFile.hasMatch(lineText)) {
             formattedText.writeln('``` ${lineText.trim()} ```');
           } else if (isTitle) {
             formattedText.writeln('\n📌 ${lineText.trim()}');
-          } else {
+          } else if (isNumbered.hasMatch(lineText)) {
             formattedText.writeln(lineText);
-          }
+          } else if (!isCodeLike.hasMatch(lineText)) {
+            formattedText.writeln(lineText);
+          } // skip pure line numbers if not numbered list
         }
-        formattedText.writeln(); // paragraph space
+        formattedText.writeln();
       }
 
       return formattedText.toString().trim();

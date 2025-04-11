@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.dart_app" // Make sure this matches your actual package
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "25.1.8937393"
 
     defaultConfig {
         applicationId = "com.example.dart_app"
-        minSdk = 24
+        minSdk = 24  // <-- Update this to 23
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

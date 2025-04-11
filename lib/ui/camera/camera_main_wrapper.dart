@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
@@ -126,7 +127,8 @@ class CameraScreenState extends State<CameraScreen> {
 
 /// 🎛 MAIN WRAPPER
 class CameraMainWrapper extends StatefulWidget {
-  const CameraMainWrapper({super.key});
+  final String? imagePath;
+  const CameraMainWrapper({super.key, this.imagePath});
 
   @override
   State<CameraMainWrapper> createState() => _CameraMainWrapperState();
@@ -137,12 +139,20 @@ class _CameraMainWrapperState extends State<CameraMainWrapper> {
 
   int _selectedIndex = 2;
 
-  late final List<Widget> _screens = [
-    const SizedBox(), // placeholder for home
-    const SizedBox(), // placeholder for gallery
-    CameraScreen(key: _cameraKey),
-    const AudioScreen(),
-  ];
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const SizedBox(),
+      const SizedBox(),
+      widget.imagePath != null
+          ? CapturePreviewScreen(imageFile: XFile(widget.imagePath!))
+          : CameraScreen(key: _cameraKey),
+      const AudioScreen(),
+    ];
+  }
 
   Future<void> _onItemTapped(int index) async {
     if (index == 0) {
